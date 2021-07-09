@@ -147,6 +147,7 @@ static const USER_DRIVER *load_driver(void)
         GET_USER_FUNC(WindowPosChanging);
         GET_USER_FUNC(WindowPosChanged);
         GET_USER_FUNC(SystemParametersInfo);
+        GET_USER_FUNC(UpdateCandidatePos);
         GET_USER_FUNC(ThreadDetach);
 #undef GET_USER_FUNC
     }
@@ -395,6 +396,10 @@ static BOOL CDECL nulldrv_SystemParametersInfo( UINT action, UINT int_param, voi
     return FALSE;
 }
 
+static void CDECL nulldrv_UpdateCandidatePos( HWND hwnd, const RECT *caret_rect )
+{
+}
+
 static void CDECL nulldrv_ThreadDetach( void )
 {
 }
@@ -449,10 +454,13 @@ static USER_DRIVER null_driver =
     nulldrv_WindowPosChanged,
     /* system parameters */
     nulldrv_SystemParametersInfo,
+    /* candidate pos functions */
+    nulldrv_UpdateCandidatePos,
     /* thread management */
     nulldrv_ThreadDetach
 };
 
+/* this line exists so that git won't apply this diff in the wrong place */
 
 /**********************************************************************
  * Lazy loading user driver
@@ -590,6 +598,11 @@ static BOOL CDECL loaderdrv_UpdateLayeredWindow( HWND hwnd, const UPDATELAYEREDW
     return load_driver()->pUpdateLayeredWindow( hwnd, info, window_rect );
 }
 
+static void CDECL loaderdrv_UpdateCandidatePos( HWND hwnd, const RECT *caret_rect )
+{
+    load_driver()->pUpdateCandidatePos( hwnd, caret_rect );
+}
+
 static USER_DRIVER lazy_load_driver =
 {
     /* keyboard functions */
@@ -640,6 +653,10 @@ static USER_DRIVER lazy_load_driver =
     nulldrv_WindowPosChanged,
     /* system parameters */
     nulldrv_SystemParametersInfo,
+    /* candidate pos functions */
+    loaderdrv_UpdateCandidatePos,
     /* thread management */
     nulldrv_ThreadDetach
 };
+
+/* this line exists so that git won't apply this diff in the wrong place */

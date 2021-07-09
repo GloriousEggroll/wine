@@ -70,12 +70,12 @@ BOOL usexvidmode = TRUE;
 BOOL usexrandr = TRUE;
 BOOL usexcomposite = TRUE;
 BOOL use_xkb = TRUE;
-BOOL use_take_focus = TRUE;
+BOOL use_take_focus = FALSE;
 BOOL use_primary_selection = FALSE;
 BOOL use_system_cursors = TRUE;
 BOOL show_systray = TRUE;
 BOOL grab_pointer = TRUE;
-BOOL grab_fullscreen = FALSE;
+BOOL grab_fullscreen = TRUE;
 BOOL managed_mode = TRUE;
 BOOL decorated_mode = TRUE;
 BOOL private_color_map = FALSE;
@@ -89,6 +89,7 @@ DWORD thread_data_tls_index = TLS_OUT_OF_INDEXES;
 int xrender_error_base = 0;
 HMODULE x11drv_module = 0;
 char *process_name = NULL;
+HANDLE steam_overlay_event;
 
 static x11drv_error_callback err_callback;   /* current callback for error */
 static Display *err_callback_display;        /* display callback is set for */
@@ -151,6 +152,8 @@ static const char * const atom_names[NB_XATOMS - FIRST_XATOM] =
     "RAW_CAP_HEIGHT",
     "Rel X",
     "Rel Y",
+    "Abs X",
+    "Abs Y",
     "WM_PROTOCOLS",
     "WM_DELETE_WINDOW",
     "WM_STATE",
@@ -622,12 +625,13 @@ static BOOL process_attach(void)
 #ifdef SONAME_LIBXCOMPOSITE
     X11DRV_XComposite_Init();
 #endif
-    X11DRV_XInput2_Init();
+    x11drv_xinput_load();
 
 #ifdef HAVE_XKB
     if (use_xkb) use_xkb = XkbUseExtension( gdi_display, NULL, NULL );
 #endif
     X11DRV_InitKeyboard( gdi_display );
+    X11DRV_InitMouse( gdi_display );
     if (use_xim) use_xim = X11DRV_InitXIM( input_style );
 
     X11DRV_DisplayDevices_Init(FALSE);
@@ -644,6 +648,8 @@ void CDECL X11DRV_ThreadDetach(void)
 
     if (data)
     {
+        if (GetWindowThreadProcessId( GetDesktopWindow(), NULL ) == GetCurrentThreadId())
+            x11drv_xinput_disable( data->display, DefaultRootWindow( data->display ), PointerMotionMask );
         if (data->xim) XCloseIM( data->xim );
         if (data->font_set) XFreeFontSet( data->display, data->font_set );
         XCloseDisplay( data->display );
@@ -714,6 +720,10 @@ struct x11drv_thread_data *x11drv_init_thread_data(void)
 
     if (use_xim) X11DRV_SetupXIM();
 
+    x11drv_xinput_init();
+    if (GetWindowThreadProcessId( GetDesktopWindow(), NULL ) == GetCurrentThreadId())
+        x11drv_xinput_enable( data->display, DefaultRootWindow( data->display ), PointerMotionMask );
+
     return data;
 }
 
@@ -731,6 +741,10 @@ BOOL WINAPI DllMain( HINSTANCE hinst, DWORD reason, LPVOID reserved )
         DisableThreadLibraryCalls( hinst );
         x11drv_module = hinst;
         ret = process_attach();
+        steam_overlay_event = CreateEventA(NULL, TRUE, FALSE, "__wine_steamclient_GameOverlayActivated");
+        break;
+    case DLL_PROCESS_DETACH:
+        CloseHandle(steam_overlay_event);
         break;
     }
     return ret;
