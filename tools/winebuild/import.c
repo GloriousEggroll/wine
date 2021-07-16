@@ -1600,6 +1600,7 @@ static void output_syscall_dispatcher(void)
         output( "\tleaq 0x28(%%rsp),%%rsi\n" );   /* first argument */
         output( "\tmovq %%rcx,%%rsp\n" );
         output( "\tmovq 0x00(%%rcx),%%rax\n" );
+        output( "\tsubq $0xf000,%%rax\n" );
         output( "\tmovq 0x18(%%rcx),%%rdx\n" );
         output( "\tmovl %%eax,%%ebx\n" );
         output( "\tshrl $8,%%ebx\n" );
@@ -1951,7 +1952,7 @@ void output_syscalls( DLLSPEC *spec )
              * validate that instruction, we can just put a jmp there instead. */
             output( "\t.byte 0x4c,0x8b,0xd1\n" ); /* movq %rcx,%r10 */
             output( "\t.byte 0xb8\n" );           /* movl $i,%eax */
-            output( "\t.long %u\n", i );
+            output( "\t.long %u\n", 0xf000 + i );
             output( "\t.byte 0xf6,0x04,0x25,0x08,0x03,0xfe,0x7f,0x01\n" ); /* testb $1,0x7ffe0308 */
             output( "\t.byte 0x75,0x03\n" );      /* jne 1f */
             output( "\t.byte 0x0f,0x05\n" );      /* syscall */

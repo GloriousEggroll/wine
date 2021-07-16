@@ -110,6 +110,8 @@ typedef struct tagUSER_DRIVER {
     void   (CDECL *pWindowPosChanged)(HWND,HWND,UINT,const RECT *,const RECT *,const RECT *,const RECT *,struct window_surface*);
     /* system parameters */
     BOOL   (CDECL *pSystemParametersInfo)(UINT,UINT,void*,UINT);
+    /* candidate pos functions */
+    void   (CDECL *pUpdateCandidatePos)(HWND,const RECT *);
     /* thread management */
     void   (CDECL *pThreadDetach)(void);
 } USER_DRIVER;
@@ -208,6 +210,7 @@ C_ASSERT( sizeof(struct user_thread_info) <= sizeof(((TEB *)0)->Win32ClientInfo)
 extern INT global_key_state_counter DECLSPEC_HIDDEN;
 extern BOOL (WINAPI *imm_register_window)(HWND) DECLSPEC_HIDDEN;
 extern void (WINAPI *imm_unregister_window)(HWND) DECLSPEC_HIDDEN;
+extern void (WINAPI *imm_activate_window)(HWND) DECLSPEC_HIDDEN;
 
 struct user_key_state_info
 {

@@ -245,6 +245,7 @@ static const struct object_ops sock_ops =
     add_queue,                    /* add_queue */
     remove_queue,                 /* remove_queue */
     default_fd_signaled,          /* signaled */
+    NULL,                         /* get_esync_fd */
     no_satisfied,                 /* satisfied */
     no_signal,                    /* signal */
     sock_get_fd,                  /* get_fd */
@@ -2161,12 +2162,25 @@ static int sock_ioctl( struct fd *fd, ioctl_code_t code, struct async *async )
             return 0;
         }
 
-        if (sock->state == SOCK_CONNECTING)
+        switch (sock->state)
         {
-            /* FIXME: STATUS_ADDRESS_ALREADY_ASSOCIATED probably isn't right,
-             * but there's no status code that maps to WSAEALREADY... */
-            set_error( params->synchronous ? STATUS_ADDRESS_ALREADY_ASSOCIATED : STATUS_INVALID_PARAMETER );
-            return 0;
+            case SOCK_LISTENING:
+                set_error( STATUS_INVALID_PARAMETER );
+                return 0;
+
+            case SOCK_CONNECTING:
+                /* FIXME: STATUS_ADDRESS_ALREADY_ASSOCIATED probably isn't right,
+                 * but there's no status code that maps to WSAEALREADY... */
+                set_error( params->synchronous ? STATUS_ADDRESS_ALREADY_ASSOCIATED : STATUS_INVALID_PARAMETER );
+                return 0;
+
+            case SOCK_CONNECTED:
+                set_error( STATUS_CONNECTION_ACTIVE );
+                return 0;
+
+            case SOCK_UNCONNECTED:
+            case SOCK_CONNECTIONLESS:
+                break;
         }
 
         unix_len = sockaddr_to_unix( addr, params->addr_len, &unix_addr );
@@ -2856,6 +2870,7 @@ static const struct object_ops ifchange_ops =
     no_add_queue,            /* add_queue */
     NULL,                    /* remove_queue */
     NULL,                    /* signaled */
+    NULL,                    /* get_esync_fd */
     no_satisfied,            /* satisfied */
     no_signal,               /* signal */
     ifchange_get_fd,         /* get_fd */
@@ -3076,6 +3091,7 @@ static const struct object_ops socket_device_ops =
     no_add_queue,               /* add_queue */
     NULL,                       /* remove_queue */
     NULL,                       /* signaled */
+    NULL,                       /* get_esync_fd */
     no_satisfied,               /* satisfied */
     no_signal,                  /* signal */
     no_get_fd,                  /* get_fd */

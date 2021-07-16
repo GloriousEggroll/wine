@@ -23,6 +23,7 @@
 
 #include <ntdef.h>
 #include <windef.h>
+#include <apiset.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -321,7 +322,7 @@ typedef struct _PEB
     PVOID                        KernelCallbackTable;               /* 02c/058 */
     ULONG                        Reserved;                          /* 030/060 */
     ULONG                        AtlThunkSListPtr32;                /* 034/064 */
-    PVOID /*PPEB_FREE_BLOCK*/    FreeList;                          /* 038/068 */
+    PAPI_SET_NAMESPACE_ARRAY     ApiSetMap;                         /* 038/068 */
     ULONG                        TlsExpansionCounter;               /* 03c/070 */
     PRTL_BITMAP                  TlsBitmap;                         /* 040/078 */
     ULONG                        TlsBitmapBits[2];                  /* 044/080 */
@@ -2784,6 +2785,7 @@ typedef struct _RTL_ATOM_TABLE
 #define FILE_OVERWRITE                  4
 #define FILE_OVERWRITE_IF               5
 #define FILE_MAXIMUM_DISPOSITION        5
+#define FILE_WINE_PATH                  6
 
 /* Characteristics of a File System */
 #define FILE_REMOVABLE_MEDIA                      0x00000001
@@ -3310,8 +3312,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY
     ULONG               Flags;
     SHORT               LoadCount;
     SHORT               TlsIndex;
-    HANDLE              SectionHandle;
     ULONG               CheckSum;
+    LIST_ENTRY          HashLinks;
     ULONG               TimeDateStamp;
     HANDLE              ActivationContext;
     void*               Lock;

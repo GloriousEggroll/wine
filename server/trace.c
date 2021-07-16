@@ -2019,6 +2019,7 @@ static void dump_alloc_file_handle_reply( const struct alloc_file_handle_reply *
 static void dump_get_handle_unix_name_request( const struct get_handle_unix_name_request *req )
 {
     fprintf( stderr, " handle=%04x", req->handle );
+    fprintf( stderr, ", nofollow=%d", req->nofollow );
 }
 
 static void dump_get_handle_unix_name_reply( const struct get_handle_unix_name_reply *req )
@@ -3192,6 +3193,12 @@ static void dump_set_window_region_request( const struct set_window_region_reque
 {
     fprintf( stderr, " window=%08x", req->window );
     fprintf( stderr, ", redraw=%d", req->redraw );
+    dump_varargs_rectangles( ", region=", cur_size );
+}
+
+static void dump_set_layer_region_request( const struct set_layer_region_request *req )
+{
+    fprintf( stderr, " window=%08x", req->window );
     dump_varargs_rectangles( ", region=", cur_size );
 }
 
@@ -4555,6 +4562,58 @@ static void dump_get_next_thread_reply( const struct get_next_thread_reply *req 
     fprintf( stderr, " handle=%04x", req->handle );
 }
 
+static void dump_create_esync_request( const struct create_esync_request *req )
+{
+    fprintf( stderr, " access=%08x", req->access );
+    fprintf( stderr, ", initval=%d", req->initval );
+    fprintf( stderr, ", type=%d", req->type );
+    fprintf( stderr, ", max=%d", req->max );
+    dump_varargs_object_attributes( ", objattr=", cur_size );
+}
+
+static void dump_create_esync_reply( const struct create_esync_reply *req )
+{
+    fprintf( stderr, " handle=%04x", req->handle );
+    fprintf( stderr, ", type=%d", req->type );
+    fprintf( stderr, ", shm_idx=%08x", req->shm_idx );
+}
+
+static void dump_open_esync_request( const struct open_esync_request *req )
+{
+    fprintf( stderr, " access=%08x", req->access );
+    fprintf( stderr, ", attributes=%08x", req->attributes );
+    fprintf( stderr, ", rootdir=%04x", req->rootdir );
+    fprintf( stderr, ", type=%d", req->type );
+    dump_varargs_unicode_str( ", name=", cur_size );
+}
+
+static void dump_open_esync_reply( const struct open_esync_reply *req )
+{
+    fprintf( stderr, " handle=%04x", req->handle );
+    fprintf( stderr, ", type=%d", req->type );
+    fprintf( stderr, ", shm_idx=%08x", req->shm_idx );
+}
+
+static void dump_get_esync_fd_request( const struct get_esync_fd_request *req )
+{
+    fprintf( stderr, " handle=%04x", req->handle );
+}
+
+static void dump_get_esync_fd_reply( const struct get_esync_fd_reply *req )
+{
+    fprintf( stderr, " type=%d", req->type );
+    fprintf( stderr, ", shm_idx=%08x", req->shm_idx );
+}
+
+static void dump_esync_msgwait_request( const struct esync_msgwait_request *req )
+{
+    fprintf( stderr, " in_msgwait=%d", req->in_msgwait );
+}
+
+static void dump_get_esync_apc_fd_request( const struct get_esync_apc_fd_request *req )
+{
+}
+
 static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_new_process_request,
     (dump_func)dump_get_new_process_info_request,
@@ -4705,6 +4764,7 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_get_surface_region_request,
     (dump_func)dump_get_window_region_request,
     (dump_func)dump_set_window_region_request,
+    (dump_func)dump_set_layer_region_request,
     (dump_func)dump_get_update_region_request,
     (dump_func)dump_update_window_zorder_request,
     (dump_func)dump_redraw_window_request,
@@ -4830,6 +4890,11 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_suspend_process_request,
     (dump_func)dump_resume_process_request,
     (dump_func)dump_get_next_thread_request,
+    (dump_func)dump_create_esync_request,
+    (dump_func)dump_open_esync_request,
+    (dump_func)dump_get_esync_fd_request,
+    (dump_func)dump_esync_msgwait_request,
+    (dump_func)dump_get_esync_apc_fd_request,
 };
 
 static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
@@ -4982,6 +5047,7 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_get_surface_region_reply,
     (dump_func)dump_get_window_region_reply,
     NULL,
+    NULL,
     (dump_func)dump_get_update_region_reply,
     NULL,
     NULL,
@@ -5107,6 +5173,11 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
     NULL,
     NULL,
     (dump_func)dump_get_next_thread_reply,
+    (dump_func)dump_create_esync_reply,
+    (dump_func)dump_open_esync_reply,
+    (dump_func)dump_get_esync_fd_reply,
+    NULL,
+    NULL,
 };
 
 static const char * const req_names[REQ_NB_REQUESTS] = {
@@ -5259,6 +5330,7 @@ static const char * const req_names[REQ_NB_REQUESTS] = {
     "get_surface_region",
     "get_window_region",
     "set_window_region",
+    "set_layer_region",
     "get_update_region",
     "update_window_zorder",
     "redraw_window",
@@ -5384,6 +5456,11 @@ static const char * const req_names[REQ_NB_REQUESTS] = {
     "suspend_process",
     "resume_process",
     "get_next_thread",
+    "create_esync",
+    "open_esync",
+    "get_esync_fd",
+    "esync_msgwait",
+    "get_esync_apc_fd",
 };
 
 static const struct
